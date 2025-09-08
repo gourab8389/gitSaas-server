@@ -2,8 +2,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  password?: string;
-  githubId?: string;
+  password?: string | null;
+  githubId?: string | null;
   avatar?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -13,7 +13,7 @@ export interface Project {
   id: string;
   name: string;
   githubUrl: string;
-  description?: string;
+  description?: string | null;
   status: 'PENDING' | 'BUILDING' | 'DEPLOYED' | 'FAILED';
   userId: string;
   createdAt: Date;
@@ -23,10 +23,10 @@ export interface Project {
 export interface Deployment {
   id: string;
   status: 'PENDING' | 'BUILDING' | 'SUCCESS' | 'FAILED';
-  url?: string;
-  logs?: string;
-  error?: string;
-  suggestion?: string;
+  url?: string | null;
+  logs?: string | null;
+  error?: string | null;
+  suggestion?: string | null;
   projectId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +40,7 @@ export interface Commit {
   date: Date;
   url: string;
   projectId: string;
+  createdAt: Date;
 }
 
 export interface GitHubCommit {
