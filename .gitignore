@@ -59,3 +59,4 @@ Thumbs.db
 # Prisma
 prisma/migrations/
 .env.example.bak
+/src/generated/prisma
