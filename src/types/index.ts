@@ -4,7 +4,7 @@ export interface User {
   name: string;
   password?: string;
   githubId?: string;
-  avatar?: string;
+  avatar?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
