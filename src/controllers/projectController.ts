@@ -4,8 +4,8 @@ import { validateRequest, projectSchema } from "../utils/validation";
 import { GeminiService } from "../services/geminiService";
 import { DeploymentService } from "../services/deploymentService";
 import { AuthRequest } from "../middleware/auth";
-import { Commit } from "@/types";
-import { GithubService } from "@/services/githubService";
+import { Commit } from "../types";
+import { GithubService } from "../services/githubService";
 
 const prisma = new PrismaClient();
 const githubService = new GithubService();
