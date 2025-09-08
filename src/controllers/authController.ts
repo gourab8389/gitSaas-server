@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { generateToken } from "../utils/jwt";
@@ -7,6 +7,7 @@ import {
   userRegistrationSchema,
   userLoginSchema,
 } from "../utils/validation";
+import passport from "@/config/passport";
 
 const prisma = new PrismaClient();
 
@@ -90,15 +91,26 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const githubAuth = async (req: Request, res: Response) => {
-  try {
-    res.json({
-      message: "GitHub OAuth integration would be implemented here",
-      redirectUrl: "/api/auth/github/callback",
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+export const githubAuth = passport.authenticate('github', { 
+  scope: ['user:email', 'repo'] 
+});
+
+export const githubCallback = async (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate('github', { session: false }, (err: any, user: any) => {
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_error`);
+    }
+    
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+    }
+
+    // Generate JWT token
+    const token = generateToken(user);
+    
+    // Redirect to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+  })(req, res, next);
 };
 
 export const getProfile = async (req: Request, res: Response) => {

@@ -5,6 +5,7 @@ export interface User {
   password?: string | null;
   githubId?: string | null;
   avatar?: string | null;
+  githubToken?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

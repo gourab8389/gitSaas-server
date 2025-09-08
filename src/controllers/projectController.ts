@@ -18,6 +18,24 @@ export const createProject = async (req: AuthRequest, res: Response) => {
     const { name, githubUrl, description } = validatedData;
     const userId = req.user.id;
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.githubToken) {
+      return res.status(400).json({ 
+        error: 'GitHub authentication required. Please login with GitHub.' 
+      });
+    }
+
+    // Validate user has access to repository
+    const hasAccess = await githubService.validateRepoAccess(githubUrl, user.githubToken);
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        error: 'You do not have access to this repository or it does not exist.' 
+      });
+    }
+
     // Validate GitHub URL and fetch repository info
     let repoInfo;
     try {
@@ -50,7 +68,7 @@ export const createProject = async (req: AuthRequest, res: Response) => {
 
     // Fetch and store commits
     try {
-      const commits = await githubService.getCommits(githubUrl, 20);
+      const commits = await githubService.getCommits(githubUrl, user.githubToken);
 
       await prisma.commit.createMany({
         data: commits.map((commit: any) => ({
@@ -360,7 +378,7 @@ export const getProjectCommits = async (req: AuthRequest, res: Response) => {
     try {
       const freshCommits = await githubService.getCommits(
         project.githubUrl,
-        20
+        req.user.githubToken || ""
       );
       
       // Delete existing commits for this project

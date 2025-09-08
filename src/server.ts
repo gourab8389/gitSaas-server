@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
@@ -10,6 +11,7 @@ import projectRoutes from './routes/projects';
 import userRoutes from './routes/users';
 
 import { errorHandler, notFound } from './middleware/errorHandler';
+import passport from './config/passport';
 
 
 dotenv.config();
@@ -21,10 +23,24 @@ const prisma = new PrismaClient();
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
+    ? process.env.CORS_ORIGIN?.split(',') 
     : ['http://localhost:3000', 'http://localhost:3002'],
   credentials: true
 }));
+
+app.use(session({
+  secret: process.env.JWT_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 

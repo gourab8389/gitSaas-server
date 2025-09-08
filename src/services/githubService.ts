@@ -32,14 +32,46 @@ export class GithubService {
     }
   }
 
-  async getCommits(repoUrl: string, limit: number = 20): Promise<GitHubCommit[]> {
+  async validateRepoAccess(
+    repoUrl: string,
+    userGithubToken: string
+  ): Promise<boolean> {
+    const { owner, repo } = this.parseGitHubUrl(repoUrl);
+
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/repos/${owner}/${repo}`,
+        {
+          headers: {
+            Authorization: `token ${userGithubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": "Project-Manager-API",
+          },
+        }
+      );
+
+      // If we can access the repo, user has permission
+      return response.status === 200;
+    } catch (error: any) {
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        return false; // No access
+      }
+      throw error;
+    }
+  }
+
+  async getCommits(repoUrl: string, userGithubToken: string, limit: number = 20): Promise<GitHubCommit[]> {
     const { owner, repo } = this.parseGitHubUrl(repoUrl);
     
     try {
       const response = await axios.get(
         `${this.baseUrl}/repos/${owner}/${repo}/commits`,
-        {
-          headers: this.getHeaders(),
+        { 
+          headers: {
+            'Authorization': `token ${userGithubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Project-Manager-API'
+          },
           params: { per_page: limit }
         }
       );
@@ -49,46 +81,37 @@ export class GithubService {
       throw new Error(`Failed to fetch commits: ${error.message}`);
     }
   }
-async getDeploymentStatus(repoUrl: string) {
+  async getDeploymentStatus(repoUrl: string) {
     const { owner, repo } = this.parseGitHubUrl(repoUrl);
-    
+
     try {
       const response = await axios.get(
-        `${this.baseUrl}/repos/${owner}/${repo}/deployments`,
+        `${this.baseUrl}/repos/${owner}/${repo}/commits`,
         { 
-          headers: this.getHeaders(),
-          params: { per_page: 1 }
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Project-Manager-API'
+          },
+          params: { per_page: 10 }
         }
       );
       
-      if (response.data.length === 0) {
-        return { status: 'no_deployments' };
-      }
-
-      const latestDeployment = response.data[0];
-      const statusResponse = await axios.get(
-        `${this.baseUrl}/repos/${owner}/${repo}/deployments/${latestDeployment.id}/statuses`,
-        { headers: this.getHeaders() }
-      );
-
-      return {
-        status: statusResponse.data[0]?.state || 'unknown',
-        deployment: latestDeployment
-      };
+      return response.data;
     } catch (error: any) {
-      throw new Error(`Failed to fetch deployment status: ${error.message}`);
+      throw new Error(`Failed to fetch commits: ${error.message}`);
     }
   }
 
   private parseGitHubUrl(url: string): { owner: string; repo: string } {
     const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\.git)?$/);
     if (!match) {
-      throw new Error('Invalid GitHub URL format');
+      throw new Error("Invalid GitHub URL format");
     }
-    
+
     return {
       owner: match[1],
-      repo: match[2].replace('.git', '')
+      repo: match[2].replace(".git", ""),
     };
   }
 }
