@@ -7,7 +7,7 @@ import {
   userRegistrationSchema,
   userLoginSchema,
 } from "../utils/validation";
-import passport from "@/config/passport";
+import passport from "../config/passport";
 
 const prisma = new PrismaClient();
 
