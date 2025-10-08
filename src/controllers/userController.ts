@@ -72,14 +72,14 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
       stats[stat.status.toLowerCase() as keyof typeof stats] = stat._count.status;
     });
 
-    res.json({
+    return res.json({
       user,
       stats,
       recentProjects,
       recentDeployments
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -104,11 +104,11 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       message: 'Profile updated successfully',
       user: updatedUser
     });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
