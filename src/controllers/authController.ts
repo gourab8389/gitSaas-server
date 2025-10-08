@@ -46,13 +46,13 @@ export const register = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "User registered successfully",
       user,
       token,
     });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -76,7 +76,7 @@ export const login = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
-    res.json({
+    return res.json({
       message: "Login successful",
       user: {
         id: user.id,
@@ -87,7 +87,7 @@ export const login = async (req: Request, res: Response) => {
       token,
     });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -109,7 +109,7 @@ export const githubCallback = async (req: Request, res: Response, next: NextFunc
     const token = generateToken(user);
     
     // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+    return res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
   })(req, res, next);
 };
 
@@ -140,8 +140,8 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ user });
+    return res.json({ user });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
