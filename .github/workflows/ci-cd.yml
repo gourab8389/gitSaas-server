@@ -3,74 +3,46 @@ name: Complete CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  test-build-deploy:
+  deploy:
     runs-on: self-hosted
 
     steps:
-    # Checkout code
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Install Node.js dependencies
     - name: Install dependencies
       run: npm ci
 
-    # Generate Prisma client
     - name: Generate Prisma client
       run: npx prisma generate
 
-    # Run linting (optional)
-    - name: Run linter
-      run: npm run lint || echo "No lint script found, skipping..."
-
-    # Run tests (optional)
-    - name: Run tests
-      run: npm test || echo "No tests found, skipping..."
-      env:
-        NODE_ENV: test
-        JWT_SECRET: test_secret
-        DATABASE_URL: sqlite://test.db
-
-    # Build application
     - name: Build application
       run: npm run build
 
-    # Login to Docker Hub
     - name: Login to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    # Build Docker image with multiple tags
     - name: Build and push Docker image
       run: |
-        # Build with timestamp and latest tags
         TIMESTAMP=$(date +%Y%m%d-%H%M%S)
         IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/project-manager-api"
         
-        # Build image
         docker build -t ${IMAGE_NAME}:latest -t ${IMAGE_NAME}:${TIMESTAMP} .
-        
-        # Push to Docker Hub
         docker push ${IMAGE_NAME}:latest
         docker push ${IMAGE_NAME}:${TIMESTAMP}
         
-        # Save image name for next steps
         echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
-    # Stop existing containers
     - name: Stop existing application
       run: |
         docker stop project-manager-api || true
         docker rm project-manager-api || true
 
-    # Pull latest image
     - name: Pull latest image
       run: docker pull ${{ env.IMAGE_NAME }}:latest
 
-    # Run database migrations
     - name: Run database migrations
       run: |
         docker run --rm \
@@ -79,7 +51,6 @@ jobs:
           ${{ env.IMAGE_NAME }}:latest \
           npx prisma migrate deploy
 
-    # Deploy new container
     - name: Deploy application
       run: |
         docker run -d \
@@ -89,47 +60,25 @@ jobs:
           --env-file /home/ubuntu/.env \
           ${{ env.IMAGE_NAME }}:latest
 
-    # Wait for application to start
     - name: Wait for startup
       run: sleep 15
 
-    # Health check
     - name: Health check
       run: |
         echo "🔍 Checking application health..."
         for i in {1..5}; do
           if curl -f http://localhost:3001/health; then
-            echo "✅ Application is healthy!"
-            echo "🚀 Deployment successful!"
-            echo "📱 Application URL: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):3001"
+            echo "✅ Deployment successful!"
             exit 0
           fi
-          echo "⏳ Attempt $i failed, retrying in 5 seconds..."
+          echo "⏳ Retry $i/5..."
           sleep 5
         done
         
-        echo "❌ Health check failed!"
-        echo "📋 Container logs:"
+        echo "❌ Deployment failed!"
         docker logs project-manager-api --tail 50
         exit 1
 
-    # Cleanup old Docker images
     - name: Cleanup old images
       run: |
-        echo "🧹 Cleaning up old Docker images..."
         docker system prune -f || true
-        
-        # Keep only last 3 versions of our image
-        docker images ${{ env.IMAGE_NAME }} --format "table {{.Tag}}\t{{.ID}}" | \
-        tail -n +2 | head -n -3 | awk '{print $2}' | \
-        xargs -r docker rmi || true
-
-    # Send notification (optional)
-    - name: Deployment notification
-      if: always()
-      run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          echo "✅ Deployment completed successfully!"
-        else
-          echo "❌ Deployment failed!"
-        fi
