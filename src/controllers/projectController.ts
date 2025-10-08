@@ -84,12 +84,12 @@ export const createProject = async (req: AuthRequest, res: Response) => {
       console.error("Error fetching commits:", error);
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Project created successfully",
       project,
     });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -126,7 +126,7 @@ export const getProjects = async (req: AuthRequest, res: Response) => {
       prisma.project.count({ where: { userId } }),
     ]);
 
-    res.json({
+    return res.json({
       projects,
       pagination: {
         page,
@@ -136,7 +136,7 @@ export const getProjects = async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -196,9 +196,9 @@ export const getProject = async (req: AuthRequest, res: Response) => {
       console.error("Error fetching GitHub deployment status:", error);
     }
 
-    res.json({ project });
+    return res.json({ project });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -231,12 +231,12 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       message: "Project updated successfully",
       project: updatedProject,
     });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -257,9 +257,9 @@ export const deleteProject = async (req: AuthRequest, res: Response) => {
       where: { id },
     });
 
-    res.json({ message: "Project deleted successfully" });
+    return res.json({ message: "Project deleted successfully" });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -348,7 +348,7 @@ export const deployProject = async (req: AuthRequest, res: Response) => {
         ]);
       });
 
-    res.json({
+    return res.json({
       message: "Deployment started",
       deployment: {
         id: deployment.id,
@@ -357,7 +357,7 @@ export const deployProject = async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -406,9 +406,9 @@ export const getProjectCommits = async (req: AuthRequest, res: Response) => {
       take: 20,
     });
 
-    res.json({ commits });
+    return res.json({ commits });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -437,7 +437,7 @@ export const getProjectAnalysis = async (req: AuthRequest, res: Response) => {
       project.commits
     );
 
-    res.json({
+    return res.json({
       project: {
         id: project.id,
         name: project.name,
@@ -446,6 +446,6 @@ export const getProjectAnalysis = async (req: AuthRequest, res: Response) => {
       analysis,
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
